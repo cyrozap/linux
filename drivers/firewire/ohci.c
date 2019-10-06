@@ -1281,7 +1281,7 @@ struct driver_data {
 };
 
 /*
- * This function apppends a packet to the DMA queue for transmission.
+ * This function appends a packet to the DMA queue for transmission.
  * Must always be called with the ochi->lock held to ensure proper
  * generation handling and locking around packet queue manipulation.
  */
