@@ -448,7 +448,7 @@ static const char *evts[] = {
 	[0x0c] = "-reserved-",		[0x0d] = "-reserved-",
 	[0x0e] = "evt_unknown",		[0x0f] = "evt_flushed",
 	[0x10] = "-reserved-",		[0x11] = "ack_complete",
-	[0x12] = "ack_pending ",	[0x13] = "-reserved-",
+	[0x12] = "ack_pending",		[0x13] = "-reserved-",
 	[0x14] = "ack_busy_X",		[0x15] = "ack_busy_A",
 	[0x16] = "ack_busy_B",		[0x17] = "-reserved-",
 	[0x18] = "-reserved-",		[0x19] = "-reserved-",
