@@ -75,6 +75,15 @@ struct descriptor {
 #define COMMAND_PTR(regs)	((regs) + 12)
 #define CONTEXT_MATCH(regs)	((regs) + 16)
 
+/*
+ * OHCI Specification, Release 1.1: 3.3.1 FIFO Implementation (informative)
+ *
+ * reqCount can be at most 65,532 (0xfffc) bytes, since it's quadlet-aligned
+ * (4-byte aligned) and limited to 16 bits.
+ */
+#define REQ_COUNT_MAX 0xfffc
+#define REQ_COUNT_SIZE (PAGE_SIZE >= REQ_COUNT_MAX ? REQ_COUNT_MAX : PAGE_SIZE)
+
 #define AR_BUFFER_SIZE	(32*1024)
 #define AR_BUFFERS_MIN	DIV_ROUND_UP(AR_BUFFER_SIZE, PAGE_SIZE)
 /* we need at least two pages for proper list management */
