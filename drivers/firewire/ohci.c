@@ -85,13 +85,13 @@ struct descriptor {
 #define REQ_COUNT_SIZE (PAGE_SIZE >= REQ_COUNT_MAX ? REQ_COUNT_MAX : PAGE_SIZE)
 
 #define AR_BUFFER_SIZE	(32*1024)
-#define AR_BUFFERS_MIN	DIV_ROUND_UP(AR_BUFFER_SIZE, PAGE_SIZE)
+#define AR_BUFFERS_MIN	DIV_ROUND_UP(AR_BUFFER_SIZE, REQ_COUNT_SIZE)
 /* we need at least two pages for proper list management */
 #define AR_BUFFERS	(AR_BUFFERS_MIN >= 2 ? AR_BUFFERS_MIN : 2)
 
-#define MAX_ASYNC_PAYLOAD	4096
+#define MAX_ASYNC_PAYLOAD	REQ_COUNT_SIZE
 #define MAX_AR_PACKET_SIZE	(16 + MAX_ASYNC_PAYLOAD + 4)
-#define AR_WRAPAROUND_PAGES	DIV_ROUND_UP(MAX_AR_PACKET_SIZE, PAGE_SIZE)
+#define AR_WRAPAROUND_PAGES	DIV_ROUND_UP(MAX_AR_PACKET_SIZE, REQ_COUNT_SIZE)
 
 struct ar_context {
 	struct fw_ohci *ohci;
@@ -669,7 +669,7 @@ static void ar_context_link_page(struct ar_context *ctx, unsigned int index)
 
 	d = &ctx->descriptors[index];
 	d->branch_address  &= cpu_to_le32(~0xf);
-	d->res_count       =  cpu_to_le16(PAGE_SIZE);
+	d->res_count       =  cpu_to_le16(REQ_COUNT_SIZE);
 	d->transfer_status =  0;
 
 	wmb(); /* finish init of new descriptors before branch_address update */
@@ -743,7 +743,7 @@ static unsigned int ar_search_last_active_buffer(struct ar_context *ctx,
 		 * If the next descriptor is still empty, we must stop at this
 		 * descriptor.
 		 */
-		if (next_res_count == cpu_to_le16(PAGE_SIZE)) {
+		if (next_res_count == cpu_to_le16(REQ_COUNT_SIZE)) {
 			/*
 			 * The exception is when the DMA data for one packet is
 			 * split over three buffers; in this case, the middle
@@ -751,11 +751,11 @@ static unsigned int ar_search_last_active_buffer(struct ar_context *ctx,
 			 * controller and look still empty, and we have to peek
 			 * at the third one.
 			 */
-			if (MAX_AR_PACKET_SIZE > PAGE_SIZE && i != last) {
+			if (MAX_AR_PACKET_SIZE > REQ_COUNT_SIZE && i != last) {
 				next_i = ar_next_buffer_index(next_i);
 				rmb();
 				next_res_count = READ_ONCE(ctx->descriptors[next_i].res_count);
-				if (next_res_count != cpu_to_le16(PAGE_SIZE))
+				if (next_res_count != cpu_to_le16(REQ_COUNT_SIZE))
 					goto next_buffer_is_active;
 			}
 
@@ -769,8 +769,8 @@ next_buffer_is_active:
 
 	rmb(); /* read res_count before the DMA data */
 
-	*buffer_offset = PAGE_SIZE - le16_to_cpu(res_count);
-	if (*buffer_offset > PAGE_SIZE) {
+	*buffer_offset = REQ_COUNT_SIZE - le16_to_cpu(res_count);
+	if (*buffer_offset > REQ_COUNT_SIZE) {
 		*buffer_offset = 0;
 		ar_context_abort(ctx, "corrupted descriptor");
 	}
@@ -1015,7 +1015,7 @@ static int ar_context_init(struct ar_context *ctx, struct fw_ohci *ohci,
 
 	for (i = 0; i < AR_BUFFERS; i++) {
 		d = &ctx->descriptors[i];
-		d->req_count      = cpu_to_le16(PAGE_SIZE);
+		d->req_count      = cpu_to_le16(REQ_COUNT_SIZE);
 		d->control        = cpu_to_le16(DESCRIPTOR_INPUT_MORE |
 						DESCRIPTOR_STATUS |
 						DESCRIPTOR_BRANCH_ALWAYS);
